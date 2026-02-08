@@ -7,9 +7,12 @@ const UserSchema = new mongoose.Schema({
   googleId: { type: String, unique: true, sparse: true },
   picture: { type: String },
   authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+  isVerified: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'blocked', 'pending'], default: 'active' },
+  phone: { type: String }, // General phone field for all users
   role: { 
     type: String, 
-    enum: ['user', 'hotel_owner'], 
+    enum: ['user', 'hotel_owner', 'admin', 'support'], 
     default: 'user' 
   },
   hotelOwnerProfile: {

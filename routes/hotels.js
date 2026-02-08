@@ -564,4 +564,109 @@ router.post("/test-create", async (req, res) => {
   }
 });
 
+// Create new user (Admin only)
+router.post("/admin/users/create", async (req, res) => {
+  try {
+    const { name, email, password, role, hotelOwnerProfile } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
+    // Hash password
+    const bcrypt = require('bcryptjs');
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create user object
+    const userData = {
+      name,
+      email,
+      password: hashedPassword,
+      role: role || 'user',
+      authProvider: 'local',
+      isVerified: true, // Admin-created users are auto-verified
+      createdAt: new Date()
+    };
+
+    // Add hotel owner profile if role is hotel_owner
+    if (role === 'hotel_owner' && hotelOwnerProfile) {
+      userData.hotelOwnerProfile = {
+        ...hotelOwnerProfile,
+        verificationStatus: hotelOwnerProfile.verificationStatus || 'pending',
+        documentsSubmitted: hotelOwnerProfile.documentsSubmitted || false
+      };
+    }
+
+    const newUser = new User(userData);
+    await newUser.save();
+
+    // Remove password from response
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({ 
+      success: true, 
+      message: "User created successfully", 
+      user: userResponse 
+    });
+  } catch (err) {
+    console.error("Create user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get all users (Admin only)
+router.get("/admin/users", async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json({ success: true, users });
+  } catch (err) {
+    console.error("Fetch users error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Update user status (Admin only)
+router.put("/admin/users/:userId/status", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { status },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ success: true, message: "User status updated", user });
+  } catch (err) {
+    console.error("Update user status error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Delete user (Admin only)
+router.delete("/admin/users/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Delete user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
