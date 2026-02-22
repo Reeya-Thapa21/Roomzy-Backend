@@ -54,7 +54,9 @@ router.post("/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        picture: user.picture
+        picture: user.picture,
+        role: user.role,
+        hotelOwnerProfile: user.hotelOwnerProfile
       }
     });
   } catch (err) {
@@ -109,7 +111,9 @@ router.post("/google", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        picture: user.picture
+        picture: user.picture,
+        role: user.role,
+        hotelOwnerProfile: user.hotelOwnerProfile
       }
     });
   } catch (error) {
